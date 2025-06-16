@@ -162,7 +162,7 @@ function App() {
       maxWidth: "700px",
       margin: "0 auto"
     }}>
-      <h1 style={{ textAlign: "center" }}>🧠 AI 智能待辦清單</h1>
+      <h1 style={{ textAlign: "center" }}>🌥️ 雲端待辦清單</h1>
 
       <div style={{ textAlign: "center", marginBottom: "10px" }}>
         📊 總任務：{total}　✅ 完成：{completed}　📌 未完成：{remaining}
