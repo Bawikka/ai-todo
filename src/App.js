@@ -35,7 +35,7 @@ function App() {
     const q = query(
       collection(db, "todos"),
       where("uid", "==", uid),
-      orderBy("priority", "desc")
+      orderBy("createdAt", "desc")
     );
     const querySnapshot = await getDocs(q);
     const todoList = querySnapshot.docs.map(doc => ({
@@ -46,7 +46,7 @@ function App() {
   };
 
   const addTodo = async () => {
-    if (newTask.trim() === "") return;
+    if (newTask.trim() === "" || !user) return;
 
     const text = newTask.toLowerCase();
     let priority = 1;
@@ -192,23 +192,19 @@ function App() {
         gap: "10px",
         marginBottom: "20px"
       }}>
-        {[
-          { key: "all", label: "全部" },
-          { key: "undone", label: "未完成" },
-          { key: "done", label: "已完成" }
-        ].map(({ key, label }) => (
+        {["all", "undone", "done"].map(type => (
           <button
-            key={key}
-            onClick={() => setFilter(key)}
+            key={type}
+            onClick={() => setFilter(type)}
             style={{
               padding: "6px 12px",
               borderRadius: "6px",
-              border: filter === key ? "2px solid #4CAF50" : "1px solid #ccc",
-              backgroundColor: filter === key ? "#e8f5e9" : "#fff",
+              border: filter === type ? "2px solid #4CAF50" : "1px solid #ccc",
+              backgroundColor: filter === type ? "#e8f5e9" : "#fff",
               cursor: "pointer"
             }}
           >
-            {label}
+            {type === "all" ? "全部" : type === "undone" ? "未完成" : "已完成"}
           </button>
         ))}
       </div>
