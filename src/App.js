@@ -172,7 +172,7 @@ function App() {
         <span style={{ marginRight: "10px", fontWeight: "bold" }}>👤 {user.email}</span>
         <button onClick={handleLogout} style={{
           padding: "6px 12px",
-          backgroundColor: "#f44336",
+          backgroundColor: "#aaaaaa",
           color: "white",
           border: "none",
           borderRadius: "6px",
