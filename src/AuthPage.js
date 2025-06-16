@@ -71,7 +71,7 @@ export default function AuthPage({ onLogin, user }) {
       textAlign: "center",
       fontFamily: "sans-serif"
     }}>
-      <h1 style={{ marginBottom: "10px" }}>🌥️ 雲端待辦清單</h1>
+      <h1 style={{ marginBottom: "10px" }}>🌥️ 雲端待辦清單📄</h1>
       <h2>{mode === "login" ? "登入" : "註冊新帳號"}</h2>
       <input
         type="email"
