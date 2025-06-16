@@ -45,6 +45,7 @@ function App() {
     setTodos(todoList);
   };
 
+
   const addTodo = async () => {
     if (newTask.trim() === "" || !user) return;
 
