@@ -93,7 +93,9 @@ function App() {
 
   const filtered = filterTodos(todos);
   const todayTasks = filtered.filter(todo => isTodayTask(todo.text));
-  const otherTasks = filtered.filter(todo => !isTodayTask(todo.text));
+  const otherTasks = filtered
+    .filter(todo => !isTodayTask(todo.text))
+    .sort((a, b) => b.priority - a.priority);
   const total = todos.length;
   const completed = todos.filter(t => t.done).length;
   const remaining = total - completed;
