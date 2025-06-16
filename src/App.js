@@ -50,12 +50,13 @@ function App() {
     if (highKeywords.some(k => text.includes(k))) priority = 3;
     else if (midKeywords.some(k => text.includes(k))) priority = 2;
 
-    await addDoc(collection(db, `users/${user.uid}/todos`), {
+    await addDoc(collection(db, "users", user.uid, "todos"), {
       text: newTask,
       priority,
       done: false,
       createdAt: Date.now()
     });
+
 
     setNewTask("");
     fetchTodos();
