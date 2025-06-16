@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { auth, db } from "./firebase";
 import {
   collection,
   getDocs,
@@ -8,18 +9,33 @@ import {
   doc,
   query,
   orderBy,
+  where
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import AuthPage from "./AuthPage";
 
 function App() {
+  const [user, setUser] = useState(null);
   const [todos, setTodos] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [filter, setFilter] = useState("all");
 
-  const todosCollection = collection(db, "todos");
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        fetchTodos(currentUser.uid);
+      }
+    });
+    return () => unsub();
+  }, []);
 
-  const fetchTodos = async () => {
-    const q = query(todosCollection, orderBy("priority", "desc"));
+  const fetchTodos = async (uid) => {
+    const q = query(
+      collection(db, "todos"),
+      where("uid", "==", uid),
+      orderBy("priority", "desc")
+    );
     const querySnapshot = await getDocs(q);
     const todoList = querySnapshot.docs.map(doc => ({
       id: doc.id,
@@ -28,19 +44,12 @@ function App() {
     setTodos(todoList);
   };
 
-  useEffect(() => {
-    fetchTodos();
-  }, []);
-
   const addTodo = async () => {
     if (newTask.trim() === "") return;
 
     const text = newTask.toLowerCase();
     let priority = 1;
-
-    // 高優先度關鍵字
     const highKeywords = ["今天", "馬上", "緊急", "立刻", "急件", "現在", "等一下"];
-    // 中優先度關鍵字
     const midKeywords = ["報告", "開會", "繳交", "繳作業", "明天", "後天", "預習", "提醒"];
 
     if (highKeywords.some(k => text.includes(k))) {
@@ -49,7 +58,8 @@ function App() {
       priority = 2;
     }
 
-    await addDoc(todosCollection, {
+    await addDoc(collection(db, "todos"), {
+      uid: user.uid,
       text: newTask,
       priority,
       done: false,
@@ -57,18 +67,18 @@ function App() {
     });
 
     setNewTask("");
-    fetchTodos();
+    fetchTodos(user.uid);
   };
 
   const deleteTodo = async (id) => {
     await deleteDoc(doc(db, "todos", id));
-    fetchTodos();
+    fetchTodos(user.uid);
   };
 
   const toggleDone = async (todo) => {
     const ref = doc(db, "todos", todo.id);
     await updateDoc(ref, { done: !todo.done });
-    fetchTodos();
+    fetchTodos(user.uid);
   };
 
   const formatTime = (timestamp) => {
@@ -97,10 +107,11 @@ function App() {
 
   const isTodayTask = (text) => text.includes("今天");
 
+  if (!user) return <AuthPage onLogin={setUser} user={null} />;
+
   const filtered = filterTodos(todos);
   const todayTasks = filtered.filter(todo => isTodayTask(todo.text));
   const otherTasks = filtered.filter(todo => !isTodayTask(todo.text));
-
   const total = todos.length;
   const completed = todos.filter(t => t.done).length;
   const remaining = total - completed;
@@ -153,12 +164,10 @@ function App() {
     }}>
       <h1 style={{ textAlign: "center" }}>🧠 AI 智能待辦清單</h1>
 
-      {/* 任務統計 */}
       <div style={{ textAlign: "center", marginBottom: "10px" }}>
         📊 總任務：{total}　✅ 完成：{completed}　📌 未完成：{remaining}
       </div>
 
-      {/* 篩選器 */}
       <div style={{
         display: "flex",
         justifyContent: "center",
@@ -182,7 +191,6 @@ function App() {
         ))}
       </div>
 
-      {/* 新增輸入區 */}
       <div style={{
         display: "flex",
         justifyContent: "center",
@@ -212,13 +220,11 @@ function App() {
         </button>
       </div>
 
-      {/* 今天須完成 */}
       {todayTasks.length > 0 && <h3>📅 今天須完成</h3>}
       <ul style={{ listStyle: "none", padding: 0 }}>
         {todayTasks.map(renderTask)}
       </ul>
 
-      {/* 其他任務 */}
       {otherTasks.length > 0 && <h3>📋 其他任務</h3>}
       <ul style={{ listStyle: "none", padding: 0 }}>
         {otherTasks.map(renderTask)}
