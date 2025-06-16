@@ -1,3 +1,4 @@
+// ✅ cloud_todo_app/App.js
 import { useState, useEffect } from "react";
 import { auth, db } from "./firebase";
 import {
@@ -11,7 +12,7 @@ import {
   orderBy,
   where
 } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import AuthPage from "./AuthPage";
 
 function App() {
@@ -79,6 +80,11 @@ function App() {
     const ref = doc(db, "todos", todo.id);
     await updateDoc(ref, { done: !todo.done });
     fetchTodos(user.uid);
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    setUser(null);
   };
 
   const formatTime = (timestamp) => {
@@ -162,6 +168,18 @@ function App() {
       maxWidth: "700px",
       margin: "0 auto"
     }}>
+      <div style={{ textAlign: "right", marginBottom: "10px" }}>
+        <span style={{ marginRight: "10px", fontWeight: "bold" }}>👤 {user.email}</span>
+        <button onClick={handleLogout} style={{
+          padding: "6px 12px",
+          backgroundColor: "#f44336",
+          color: "white",
+          border: "none",
+          borderRadius: "6px",
+          cursor: "pointer"
+        }}>登出</button>
+      </div>
+
       <h1 style={{ textAlign: "center" }}>🌥️ 雲端待辦清單</h1>
 
       <div style={{ textAlign: "center", marginBottom: "10px" }}>
@@ -174,19 +192,23 @@ function App() {
         gap: "10px",
         marginBottom: "20px"
       }}>
-        {["all", "undone", "done"].map(type => (
+        {[
+          { key: "all", label: "全部" },
+          { key: "undone", label: "未完成" },
+          { key: "done", label: "已完成" }
+        ].map(({ key, label }) => (
           <button
-            key={type}
-            onClick={() => setFilter(type)}
+            key={key}
+            onClick={() => setFilter(key)}
             style={{
               padding: "6px 12px",
               borderRadius: "6px",
-              border: filter === type ? "2px solid #4CAF50" : "1px solid #ccc",
-              backgroundColor: filter === type ? "#e8f5e9" : "#fff",
+              border: filter === key ? "2px solid #4CAF50" : "1px solid #ccc",
+              backgroundColor: filter === key ? "#e8f5e9" : "#fff",
               cursor: "pointer"
             }}
           >
-            {type === "all" ? "全部" : type === "undone" ? "未完成" : "已完成"}
+            {label}
           </button>
         ))}
       </div>
