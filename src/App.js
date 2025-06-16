@@ -1,4 +1,4 @@
-// ✅ cloud_todo_app/App.js
+// ✅ 子集合版本 App.js
 import { useState, useEffect } from "react";
 import { auth, db } from "./firebase";
 import {
@@ -9,8 +9,7 @@ import {
   updateDoc,
   doc,
   query,
-  orderBy,
-  where
+  orderBy
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import AuthPage from "./AuthPage";
@@ -24,27 +23,21 @@ function App() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
-        fetchTodos(currentUser.uid);
-      }
     });
     return () => unsub();
   }, []);
 
-  const fetchTodos = async (uid) => {
-    const q = query(
-      collection(db, "todos"),
-      where("uid", "==", uid),
-      orderBy("createdAt", "desc")
-    );
-    const querySnapshot = await getDocs(q);
-    const todoList = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+  useEffect(() => {
+    if (user) fetchTodos();
+  }, [user]);
+
+  const fetchTodos = async () => {
+    const todosRef = collection(db, `users/${user.uid}/todos`);
+    const q = query(todosRef, orderBy("createdAt", "desc"));
+    const snapshot = await getDocs(q);
+    const todoList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setTodos(todoList);
   };
-
 
   const addTodo = async () => {
     if (newTask.trim() === "" || !user) return;
@@ -54,14 +47,10 @@ function App() {
     const highKeywords = ["今天", "馬上", "緊急", "立刻", "急件", "現在", "等一下"];
     const midKeywords = ["報告", "開會", "繳交", "繳作業", "明天", "後天", "預習", "提醒"];
 
-    if (highKeywords.some(k => text.includes(k))) {
-      priority = 3;
-    } else if (midKeywords.some(k => text.includes(k))) {
-      priority = 2;
-    }
+    if (highKeywords.some(k => text.includes(k))) priority = 3;
+    else if (midKeywords.some(k => text.includes(k))) priority = 2;
 
-    await addDoc(collection(db, "todos"), {
-      uid: user.uid,
+    await addDoc(collection(db, `users/${user.uid}/todos`), {
       text: newTask,
       priority,
       done: false,
@@ -69,18 +58,18 @@ function App() {
     });
 
     setNewTask("");
-    fetchTodos(user.uid);
+    fetchTodos();
   };
 
   const deleteTodo = async (id) => {
-    await deleteDoc(doc(db, "todos", id));
-    fetchTodos(user.uid);
+    await deleteDoc(doc(db, `users/${user.uid}/todos/${id}`));
+    fetchTodos();
   };
 
   const toggleDone = async (todo) => {
-    const ref = doc(db, "todos", todo.id);
+    const ref = doc(db, `users/${user.uid}/todos/${todo.id}`);
     await updateDoc(ref, { done: !todo.done });
-    fetchTodos(user.uid);
+    fetchTodos();
   };
 
   const handleLogout = async () => {
@@ -88,23 +77,9 @@ function App() {
     setUser(null);
   };
 
-  const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString();
-  };
-
-  const isExpired = (timestamp) => {
-    const oneDay = 24 * 60 * 60 * 1000;
-    return Date.now() - timestamp > oneDay;
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 3: return "#ff4d4d";
-      case 2: return "#ffcc00";
-      default: return "#ccc";
-    }
-  };
+  const formatTime = (timestamp) => new Date(timestamp).toLocaleString();
+  const isExpired = (timestamp) => Date.now() - timestamp > 86400000;
+  const getPriorityColor = (priority) => priority === 3 ? "#ff4d4d" : priority === 2 ? "#ffcc00" : "#ccc";
 
   const filterTodos = (list) => {
     if (filter === "done") return list.filter(todo => todo.done);
@@ -113,7 +88,6 @@ function App() {
   };
 
   const isTodayTask = (text) => text.includes("今天");
-
   if (!user) return <AuthPage onLogin={setUser} user={null} />;
 
   const filtered = filterTodos(todos);
